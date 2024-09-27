@@ -1,27 +1,38 @@
 const fs = require('fs');
+const path = require('path');
+
 let items = [];
 let categories = [];
 
 
 function initialize() {
+    return Promise.all([loadItems(), loadCategories()]);
+}
+
+
+function loadItems() {
     return new Promise((resolve, reject) => {
-        fs.readFile('./data/items.json', 'utf8', (err, data) => {
+        fs.readFile(path.join(__dirname, 'data', 'items.json'), 'utf8', (err, data) => {
             if (err) {
-                reject("unable to read items file");
+                reject("Unable to read items.json");
                 return;
             }
-
             items = JSON.parse(data);
+            resolve();
+        });
+    });
+}
 
-            fs.readFile('./data/categories.json', 'utf8', (err, data) => {
-                if (err) {
-                    reject("unable to read categories file");
-                    return;
-                }
 
-                categories = JSON.parse(data);
-                resolve();
-            });
+function loadCategories() {
+    return new Promise((resolve, reject) => {
+        fs.readFile(path.join(__dirname, 'data', 'categories.json'), 'utf8', (err, data) => {
+            if (err) {
+                reject("Unable to read categories.json");
+                return;
+            }
+            categories = JSON.parse(data);
+            resolve();
         });
     });
 }
@@ -29,33 +40,21 @@ function initialize() {
 
 function getAllItems() {
     return new Promise((resolve, reject) => {
-        if (items.length === 0) {
-            reject("no results returned");
+        if (items.length > 0) {
+            resolve(items);
         } else {
-           
-            const itemsWithCategories = items.map(item => {
-                const category = categories.find(cat => cat.id === item.category);
-                return { ...item, categoryName: category ? category.category : 'Unknown' };
-            });
-            resolve(itemsWithCategories);
+            reject("No items found");
         }
     });
 }
 
-
 function getPublishedItems() {
     return new Promise((resolve, reject) => {
-        let publishedItems = items.filter(item => item.published === true);
-
-        if (publishedItems.length === 0) {
-            reject("no results returned");
+        const publishedItems = items.filter(item => item.published);
+        if (publishedItems.length > 0) {
+            resolve(publishedItems);
         } else {
-           
-            const itemsWithCategories = publishedItems.map(item => {
-                const category = categories.find(cat => cat.id === item.category);
-                return { ...item, categoryName: category ? category.category : 'Unknown' };
-            });
-            resolve(itemsWithCategories);
+            reject("No published items found");
         }
     });
 }
@@ -63,17 +62,13 @@ function getPublishedItems() {
 
 function getCategories() {
     return new Promise((resolve, reject) => {
-        if (categories.length === 0) {
-            reject("no results returned");
-        } else {
+        if (categories.length > 0) {
             resolve(categories);
+        } else {
+            reject("No categories found");
         }
     });
 }
 
-module.exports = {
-    initialize,
-    getAllItems,
-    getPublishedItems,
-    getCategories
-};
+
+module.exports = { initialize, getAllItems, getPublishedItems, getCategories };
